@@ -7,7 +7,10 @@ import hashlib
 from polyswarm_api.api import PolyswarmAPI
 
 misperrors = {'error': 'Error'}
-mispattributes = {'input': ['hostname', 'domain', "ip-src", "ip-dst", "md5", "sha1", "sha256", "url"],
+mispattributes = {'input': [
+                            # 'hostname', 'domain', "ip-src", "ip-dst",
+                            "md5", "sha1", "sha256", "url"
+                            ],
                   'format': 'misp_standard'}
 
 # possible module-types: 'expansion', 'hover' or both
@@ -32,10 +35,14 @@ class PolySwarmParser(object):
         #                             'domain': self.parse_domain, 'hostname': self.parse_domain,
         #                             'md5': self.parse_hash, 'sha1': self.parse_hash,
         #                             'sha256': self.parse_hash, 'url': self.parse_url}
-        self.input_types_mapping = {'ip-src': self._raise_not_implemented(self.parse_ip), 'ip-dst': self._raise_not_implemented(self.parse_ip),
-                                    'domain': self._raise_not_implemented(self.parse_domain), 'hostname': self._raise_not_implemented(self.parse_domain),
+        self.input_types_mapping = {
+
+
+                                    # 'ip-src': self._raise_not_implemented(self.parse_ip), 'ip-dst': self._raise_not_implemented(self.parse_ip),
+                                    # 'domain': self._raise_not_implemented(self.parse_domain), 'hostname': self._raise_not_implemented(self.parse_domain),
                                     'md5': self.parse_hash, 'sha1': self.parse_hash,
-                                    'sha256': self.parse_hash, 'url': self.parse_url}
+                                    'sha256': self.parse_hash, 'url': self.parse_url
+        }
 
     def _raise_not_implemented(self, func):
         def fake(indic, **kwargs):
@@ -117,7 +124,7 @@ class PolySwarmParser(object):
                 # todo more texture in errors than just status code
                 return 200
         except NoResultsException:
-            
+
             return 404
 
         return 404
