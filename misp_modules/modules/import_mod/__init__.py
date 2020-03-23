@@ -9,7 +9,6 @@ __all__ = [
     'ocr',
     'cuckooimport',
     'goamlimport',
-    'email_import',
     'mispjson',
     'openiocimport',
     'threatanalyzer_import',

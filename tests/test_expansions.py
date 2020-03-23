@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import string
 import unittest
+import random
+
 import requests
 from urllib.parse import urljoin
 from base64 import b64encode
@@ -346,6 +348,42 @@ class TestExpansions(unittest.TestCase):
         query = {"module": "pdf_enrich", "attachment": filename, "data": encoded}
         response = self.misp_modules_post(query)
         self.assertEqual(self.get_values(response), 'Pdf test')
+
+    def test_polyswarm(self):
+        module_name = "polyswarm"
+        query_types = ('sha256', 'url', 'url')
+
+        def randomString(stringLength=10):
+            """Generate a random string of fixed length """
+            letters = string.ascii_lowercase
+            return ''.join(random.choice(letters) for i in range(stringLength))
+
+        dga = "http://{}.com".format(randomString(20))
+
+        # query_types = ('sha256', 'domain', 'ip-src', 'sha256', 'url')
+        # query_values = ('374ef83de2b254c4970b830bb93a1dd79955945d24b824a0b35636e14355fe05', 'circl.lu', '149.13.33.14',
+        #                 'a04ac6d98ad989312783d4fe3456c53730b212c79a426fb215708b6c6daa3de3',
+        #                 'http://194.169.88.56:49151/.i')
+        query_values = ('374ef83de2b254c4970b830bb93a1dd79955945d24b824a0b35636e14355fe05', 'https://www.google.exe.com', dga)
+        results = ('polyswarm-report', 'polyswarm-report', 'polyswarm-report')
+        # results = ('polyswarm-report', 'domain-ip', 'asn', 'virustotal-report', 'virustotal-report')
+        if module_name in self.configs:
+            for query_type, query_value, result in zip(query_types, query_values, results):
+                query = {"module": module_name,
+                         "attribute": {"type": query_type,
+                                       "value": query_value},
+                         "config": self.configs[module_name]}
+                response = self.misp_modules_post(query)
+                try:
+                    self.assertEqual(self.get_object(response), result)
+                except Exception:
+                    self.assertEqual(self.get_errors(response), "PolySwarm request rate limit exceeded.")
+        else:
+            query = {"module": module_name,
+                     "attribute": {"type": query_types[0],
+                                   "value": query_values[0]}}
+            response = self.misp_modules_post(query)
+            self.assertEqual(self.get_errors(response), "A PolySwarm api key is required for this module.")
 
     def test_pptx(self):
         filename = 'test.pptx'
