@@ -92,30 +92,34 @@ class PolySwarmParser(object):
         return self.parse_related_urls(req, recurse, uuid)
 
     def parse_hash(self, sample, recurse=False, uuid=None, relationship=None):
+        try:
+            for ai in self._ps_api.search(sample):
+                #req = req.json()
+                ps_uuid = self.parse_ps_object(ai)
+                file_attributes = []
+                for hash_type, h in ai.metadata.json['hash'].items():
+                    file_attributes.append({'type': hash_type, 'object_relation': hash_type,
+                     'value': h})
 
-        for ai in self._ps_api.search(sample):
-            #req = req.json()
-            ps_uuid = self.parse_ps_object(ai)
-            file_attributes = []
-            for hash_type, h in ai.metadata.json['hash'].items():
-                file_attributes.append({'type': hash_type, 'object_relation': hash_type,
-                 'value': h})
+                if file_attributes:
+                    file_object = MISPObject('file')
+                    for attribute in file_attributes:
+                        try:
+                            file_object.add_attribute(**attribute)
+                        except NewAttributeError:
+                            attribute['type'] = 'text'
+                            file_object.add_attribute(**attribute)
+                            pass
+                    file_object.add_reference(ps_uuid, 'analyzed-with')
+                    if uuid and relationship:
+                        file_object.add_reference(uuid, relationship)
+                    self.misp_event.add_object(**file_object)
+                # todo more texture in errors than just status code
+                return 200
+        except NoResultsException:
+            
+            return 404
 
-            if file_attributes:
-                file_object = MISPObject('file')
-                for attribute in file_attributes:
-                    try:
-                        file_object.add_attribute(**attribute)
-                    except NewAttributeError:
-                        attribute['type'] = 'text'
-                        file_object.add_attribute(**attribute)
-                        pass
-                file_object.add_reference(ps_uuid, 'analyzed-with')
-                if uuid and relationship:
-                    file_object.add_reference(uuid, relationship)
-                self.misp_event.add_object(**file_object)
-            # todo more texture in errors than just status code
-            return 200
         return 404
 
     def parse_ip(self, ip, recurse=False):
