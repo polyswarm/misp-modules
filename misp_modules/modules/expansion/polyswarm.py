@@ -37,8 +37,6 @@ class PolySwarmParser(object):
         #                             'md5': self.parse_hash, 'sha1': self.parse_hash,
         #                             'sha256': self.parse_hash, 'url': self.parse_url}
         self.input_types_mapping = {
-
-
                                     'ip-src': self.parse_ip, 'ip-dst': self.parse_ip,
                                     'domain': self.parse_domain, 'hostname': self.parse_domain,
                                     'md5': self.parse_hash, 'sha1': self.parse_hash,
@@ -80,6 +78,9 @@ class PolySwarmParser(object):
         try:
             for ai in self._ps_api.search(sample):
                 #req = req.json()
+                if not ai.assertions:
+                    # then we need to resscan
+                    self._ps_api.rescan(ai.sha256)
                 ps_uuid = self.parse_ps_object(ai)
                 file_attributes = []
                 for hash_type, h in ai.metadata.json['hash'].items():
