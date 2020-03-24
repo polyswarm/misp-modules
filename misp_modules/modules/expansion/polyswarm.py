@@ -42,6 +42,8 @@ class PolySwarmParser(object):
                                     'md5': self.parse_hash, 'sha1': self.parse_hash,
                                     'sha256': self.parse_hash, 'url': self.parse_url
         }
+        # todo wire up to option
+        self.rescan = False
 
     def _raise_not_implemented(self, func):
         def fake(indic, **kwargs):
@@ -78,7 +80,7 @@ class PolySwarmParser(object):
         try:
             for ai in self._ps_api.search(sample):
                 #req = req.json()
-                if not ai.assertions:
+                if not ai.assertions and self.rescan:
                     # then we need to resscan
                     self._ps_api.rescan(ai.sha256)
                     # short circuite here
