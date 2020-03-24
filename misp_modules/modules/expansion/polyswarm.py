@@ -54,6 +54,9 @@ class PolySwarmParser(object):
         }
         # todo wire up to option
         self.rescan = False
+        self.min_url_len = 10
+
+
 
     def _raise_not_implemented(self, func):
         def fake(indic, **kwargs):
@@ -227,13 +230,13 @@ class PolySwarmParser(object):
             if ai.type == "FILE":
 
                 [ps_object.add_attribute('filename', type='filename', value=fn)for fn in ai.filenames]
-                if ai.metadata.urls:
-                    [ps_object.add_attribute('url', type='url', value=fn)for fn in ai.metadata.urls[:10]]
+                if ai.metadata.urls and self.attach_urls:
+                    [ps_object.add_attribute('url', type='url', value=fn)for fn in ai.metadata.urls if len(fn) > self.min_url_len]
                 ps_object.add_attribute('filesize', type='size-in-bytes', value=ai.size)
                 ps_object.add_attribute('mime-type', type='mime-type', value=ai.mimetype)
                 # todo allow for limit configure
                 if ai.metadata.domains:
-                    [ps_object.add_attribute('domain', type='domain', value=fn)for fn in ai.metadata.domains[:10]]
+                    [ps_object.add_attribute('domain', type='domain', value=fn)for fn in ai.metadata.domains if len(fn) > self.min_url_len]
                 # todo get below modfied, figure out malware family name
                 # todo add IP
 
