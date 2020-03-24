@@ -1,3 +1,6 @@
+import logging
+import sys
+
 from polyswarm_api.exceptions import NoResultsException
 from polyswarm_api.types import resources
 from pymisp import MISPAttribute, MISPEvent, MISPObject, NewAttributeError, MISPTag
@@ -5,6 +8,13 @@ import json
 import requests
 import hashlib
 from polyswarm_api.api import PolyswarmAPI
+
+
+log = logging.getLogger('polyswarm')
+log.setLevel(logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+
 
 misperrors = {'error': 'Error'}
 mispattributes = {'input': [
@@ -58,7 +68,10 @@ class PolySwarmParser(object):
     def query_api(self, attribute):
         self.attribute = MISPAttribute()
         self.attribute.from_dict(**attribute)
-        return self.input_types_mapping[self.attribute.type](self.attribute.value, recurse=True)
+        log.debug("query polyswarm for {}".format(self.attribute.value))
+        r =  self.input_types_mapping[self.attribute.type](self.attribute.value, recurse=True)
+        log.debug("done query polyswarm for {}".format(self.attribute.value))
+        return r
 
     def get_result(self):
         # todo this is a hack to get around parsing result
