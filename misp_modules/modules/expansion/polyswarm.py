@@ -81,6 +81,9 @@ class PolySwarmParser(object):
                 if not ai.assertions:
                     # then we need to resscan
                     self._ps_api.rescan(ai.sha256)
+                    # short circuite here
+                    # Todo link for new scan result
+                    return 200
                 ps_uuid = self.parse_ps_object(ai)
                 file_attributes = []
                 for hash_type, h in ai.metadata.json['hash'].items():
@@ -218,9 +221,6 @@ class PolySwarmParser(object):
                     [ps_object.add_attribute('domain', type='domain', value=fn)for fn in ai.metadata.domains[:10]]
                 # todo get below modfied, figure out malware family name
                 # todo add IP
-
-
-
 
             elif ai.type == "URL":
                 # todo dns and submit for scanning?
