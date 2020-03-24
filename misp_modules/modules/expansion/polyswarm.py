@@ -214,7 +214,8 @@ class PolySwarmParser(object):
                 ps_object.add_attribute('filesize', type='size-in-bytes', value=ai.size)
                 ps_object.add_attribute('mime-type', type='mime-type', value=ai.mimetype)
                 # todo allow for limit configure
-                [ps_object.add_attribute('domain', type='domain', value=fn)for fn in ai.metadata.domains[:10]]
+                if ai.metadata.domains:
+                    [ps_object.add_attribute('domain', type='domain', value=fn)for fn in ai.metadata.domains[:10]]
                 # todo get below modfied, figure out malware family name
                 # todo add IP
 
