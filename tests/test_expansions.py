@@ -351,21 +351,22 @@ class TestExpansions(unittest.TestCase):
 
     def test_polyswarm(self):
         module_name = "polyswarm"
-        query_types = ('sha256', 'url', 'url')
+        query_types = ('sha256', 'url', 'url', 'domain', 'ip-dst')
 
         def randomString(stringLength=10):
             """Generate a random string of fixed length """
             letters = string.ascii_lowercase
             return ''.join(random.choice(letters) for i in range(stringLength))
 
-        dga = "http://{}.com".format(randomString(20))
+        url_dga = "http://{}.com".format(randomString(20))
+        dga = "{}.com".format(randomString(20))
 
         # query_types = ('sha256', 'domain', 'ip-src', 'sha256', 'url')
         # query_values = ('374ef83de2b254c4970b830bb93a1dd79955945d24b824a0b35636e14355fe05', 'circl.lu', '149.13.33.14',
         #                 'a04ac6d98ad989312783d4fe3456c53730b212c79a426fb215708b6c6daa3de3',
         #                 'http://194.169.88.56:49151/.i')
-        query_values = ('374ef83de2b254c4970b830bb93a1dd79955945d24b824a0b35636e14355fe05', 'https://www.google.exe.com', dga)
-        results = ('polyswarm-report', 'polyswarm-report', 'polyswarm-report')
+        query_values = ('374ef83de2b254c4970b830bb93a1dd79955945d24b824a0b35636e14355fe05', 'https://www.google.exe.com', url_dga, dga, "8.8.8.8")
+        results = ('polyswarm-report',)*len(query_values)
         # results = ('polyswarm-report', 'domain-ip', 'asn', 'virustotal-report', 'virustotal-report')
         if module_name in self.configs:
             for query_type, query_value, result in zip(query_types, query_values, results):

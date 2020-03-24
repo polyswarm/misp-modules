@@ -8,7 +8,8 @@ from polyswarm_api.api import PolyswarmAPI
 
 misperrors = {'error': 'Error'}
 mispattributes = {'input': [
-                            # 'hostname', 'domain', "ip-src", "ip-dst",
+                            'hostname', 'domain',
+                            "ip-src", "ip-dst",
                             "md5", "sha1", "sha256", "url"
                             ],
                   'format': 'misp_standard'}
@@ -38,8 +39,8 @@ class PolySwarmParser(object):
         self.input_types_mapping = {
 
 
-                                    # 'ip-src': self._raise_not_implemented(self.parse_ip), 'ip-dst': self._raise_not_implemented(self.parse_ip),
-                                    # 'domain': self._raise_not_implemented(self.parse_domain), 'hostname': self._raise_not_implemented(self.parse_domain),
+                                    'ip-src': self.parse_ip, 'ip-dst': self.parse_ip,
+                                    'domain': self.parse_domain, 'hostname': self.parse_domain,
                                     'md5': self.parse_hash, 'sha1': self.parse_hash,
                                     'sha256': self.parse_hash, 'url': self.parse_url
         }
@@ -73,30 +74,7 @@ class PolySwarmParser(object):
 
     def parse_domain(self, domain, recurse=False):
 
-        req = requests.get(self.base_url.format('domain'), params={'apikey': self.apikey, 'domain': domain})
-        req = self._ps_api.submit()
-        # todo
-        if req.status_code != 200:
-            return req.status_code
-        req = req.json()
-        hash_type = 'sha256'
-        whois = 'whois'
-        feature_types = {'communicating': 'communicates-with',
-                         'downloaded': 'downloaded-from',
-                         'referrer': 'referring'}
-        siblings = (self.parse_siblings(domain) for domain in req['domain_siblings'])
-        uuid = self.parse_resolutions(req['resolutions'], req['subdomains'], siblings)
-        for feature_type, relationship in feature_types.items():
-            for feature in ('undetected_{}_samples', 'detected_{}_samples'):
-                for sample in req.get(feature.format(feature_type), [])[:self.limit]:
-                    status_code = self.parse_hash(sample[hash_type], False, uuid, relationship)
-                    if status_code != 200:
-                        return status_code
-        if req.get(whois):
-            whois_object = MISPObject(whois)
-            whois_object.add_attribute('text', type='text', value=req[whois])
-            self.misp_event.add_object(**whois_object)
-        return self.parse_related_urls(req, recurse, uuid)
+        return self.parse_url("http://{}".format(domain), recurse=recurse)
 
     def parse_hash(self, sample, recurse=False, uuid=None, relationship=None):
         try:
@@ -130,22 +108,7 @@ class PolySwarmParser(object):
         return 404
 
     def parse_ip(self, ip, recurse=False):
-        req = requests.get(self.base_url.format('ip-address'), params={'apikey': self.apikey, 'ip': ip})
-        if req.status_code != 200:
-            return req.status_code
-        req = req.json()
-        if req.get('asn'):
-            asn_mapping = {'network': ('ip-src', 'subnet-announced'),
-                           'country': ('text', 'country')}
-            asn_object = MISPObject('asn')
-            asn_object.add_attribute('asn', type='AS', value=req['asn'])
-            for key, value in asn_mapping.items():
-                if req.get(key):
-                    attribute_type, relation = value
-                    asn_object.add_attribute(relation, type=attribute_type, value=req[key])
-            self.misp_event.add_object(**asn_object)
-        uuid = self.parse_resolutions(req['resolutions']) if req.get('resolutions') else None
-        return self.parse_related_urls(req, recurse, uuid)
+        return self.parse_url("http://{}".format(ip), recurse=recurse)
 
     def parse_url(self, url, recurse=False, uuid=None):
         # todo we need to sha256 this and search against api
@@ -172,7 +135,7 @@ class PolySwarmParser(object):
             ps_uuid = self.parse_ps_object(s, scan_submit=True)
 
             return 200
-        # todo submit if 404?!
+
         # status_code = req.status_code
         # if req.status_code == 200:
         #     req = req.json()
@@ -243,8 +206,10 @@ class PolySwarmParser(object):
             ps_object.add_attribute('polyscore', type='float', value=ai.polyscore)
 
             if ai.type == "FILE":
+
                 [ps_object.add_attribute('filename', type='filename', value=fn)for fn in ai.filenames]
-                [ps_object.add_attribute('url', type='url', value=fn)for fn in ai.metadata.urls[:10]]
+                if ai.metadata.urls:
+                    [ps_object.add_attribute('url', type='url', value=fn)for fn in ai.metadata.urls[:10]]
                 ps_object.add_attribute('filesize', type='size-in-bytes', value=ai.size)
                 ps_object.add_attribute('mime-type', type='mime-type', value=ai.mimetype)
                 # todo allow for limit configure
